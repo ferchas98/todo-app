@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import clsx from "clsx";
+import { getKoders, createKoder, deleteKoder } from "./api";
 
 export default function App() {
-  const [todos, setTodos] = useState([]);
+  const [koders, setKoders] = useState([]);
+
+  useEffect(() => {
+    getKoders()
+      .then((koders) => {
+        setKoders(koders);
+      })
+      .catch((error) => {
+        console.error("Error fetching koders:", error);
+      });
+  }, []);
 
   const {
     register,
@@ -12,15 +23,27 @@ export default function App() {
     reset,
   } = useForm();
 
-  function onSubmit(data) {
-    console.log("data", data);
-    setTodos([...todos, { ...data }]);
-    reset();
+  async function onSubmit(data) {
+    try {
+      await createKoder(data);
+      const kodersList = await getKoders();
+      setKoders(kodersList);
+      reset();
+    } catch (error) {
+      console.error("Error al crear al koder:", error);
+      alert("Error al crear al koder");
+    }
   }
 
-  function removeTodo(indexToRemove) {
-    const newTodos = todos.filter((todo, index) => index !== indexToRemove);
-    setTodos(newTodos);
+  async function onDelete(koderId) {
+    try {
+      await deleteKoder(koderId);
+      const kodersList = await getKoders();
+      setKoders(kodersList);
+    } catch (error) {
+      console.error("Error al eliminar al koder:", error);
+      alert("Error al eliminar al koder");
+    }
   }
 
   return (
@@ -31,60 +54,60 @@ export default function App() {
       >
         <input
           type="text"
-          placeholder="Nombre"
+          placeholder="First Name"
           className={clsx("p-2 rounded text-black w-full max-w-screen-sm", {
-            "border-2 border-red-500 bg-red-300": errors.nombre,
+            "border-2 border-red-500 bg-red-300": errors.firstName,
           })}
           required
-          {...register("nombre", {
+          {...register("firstName", {
             required: { value: true, message: "campo requerido" },
             minLength: { value: 3, message: "minimo 3 caracteres" },
             maxLength: { value: 180, message: "maximo 180 caracteres" },
           })}
         />
-        {errors.nombre && (
+        {errors.firstName && (
           <p className="text-red-500 text-center text-sm font-semibold">
-            {errors.nombre?.message}
+            {errors.firstName?.message}
           </p>
         )}
 
         <input
           type="text"
-          placeholder="Apellido"
+          placeholder="Last Name"
           className={clsx("p-2 rounded text-black w-full max-w-screen-sm", {
-            "border-2 border-red-500 bg-red-300": errors.apellido,
+            "border-2 border-red-500 bg-red-300": errors.lastName,
           })}
           required
-          {...register("apellido", {
+          {...register("lastName", {
             required: { value: true, message: "campo requerido" },
             minLength: { value: 3, message: "minimo 3 caracteres" },
             maxLength: { value: 180, message: "maximo 180 caracteres" },
           })}
         />
-        {errors.apellido && (
+        {errors.lastName && (
           <p className="text-red-500 text-center text-sm font-semibold">
-            {errors.apellido?.message}
+            {errors.lastName?.message}
           </p>
         )}
 
         <input
           type="email"
-          placeholder="Correo"
+          placeholder="Email"
           className={clsx("p-2 rounded text-black w-full max-w-screen-sm", {
-            "border-2 border-red-500 bg-red-300": errors.correo,
+            "border-2 border-red-500 bg-red-300": errors.email,
           })}
           required
-          {...register("correo", {
+          {...register("email", {
             required: { value: true, message: "campo requerido" },
             pattern: {
               value: /^[^@]+@[^@]+\.[a-zA-Z]{2,}$/,
-              message: "correo inválido",
+              message: "email inválido",
             },
           })}
         />
-        {errors.correo && (
+        {errors.email && (
           <p className="text-red-500 text-center text-sm font-semibold">
-            {errors.correo?.message}
+            {errors.email?.message}
           </p>
         )}
 
@@ -97,25 +120,25 @@ export default function App() {
       </form>
 
       <div className="max-w-screen-sm w-full mx-auto p-4 flex flex-col gap-1">
-        {todos.length === 0 && (
+        {koders.length === 0 && (
           <p className="text-white/50 flex justify-center">
             No tienes usuarios
           </p>
         )}
 
-        {todos.map((todo, idx) => (
+        {koders.map((koder, idx) => (
           <div
-            key={`todo-${idx}`}
+            key={`koder-${idx}`}
             className="bg-white/10 rounded p-4 flex flex-row gap-24"
           >
-            <span className="select-none">{todo.nombre}</span>
-            <span className="select-none">{todo.apellido}</span>
-            <span className="select-none">{todo.correo}</span>
+            <span className="select-none">{koder.firstName}</span>
+            <span className="select-none">{koder.lastName}</span>
+            <span className="select-none">{koder.email}</span>
             <span
               className="text-red-500 cursor-pointer hover:bg-red-500 hover:text-white rounded-full p-1 size-8 text-center items-center flex"
-              onClick={() => removeTodo(idx)}
+              onClick={() => onDelete(koder.id)}
             >
-              Equis
+              X
             </span>
           </div>
         ))}
